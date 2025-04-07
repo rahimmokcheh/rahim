@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Ajouter des Caméras</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link rel="icon" type="image/png" href="/static/img/icon/logo_S4G.png">
+    <!--------------- Google Web Fonts --------------->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;500&display=swap" rel="stylesheet">  
+    <!--------------- Icon Font Stylesheet ------------>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-------------- Libraries Stylesheet ------------>
+    <link href="/static/lib/animate/animate.min.css" rel="stylesheet">
+    <link href="/static/lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+    <link href="/static/lib/lightbox/css/lightbox.min.css" rel="stylesheet">
+    <!------------- Customized Bootstrap Stylesheet ------------>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <!------------- Template Stylesheet ------------>
+    <link href="/static/css/style.css" rel="stylesheet">
+<!-----------------------background-------------------->
+    <style>
+        body {
+            background-image: url('/static/img/forestbackground2.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin: 0; /* Remove default body margin */
+            padding: 0; /* Remove default body padding */
+        }
+    
+        /* Add this style to make the page fill the viewport */
+        html, body {
+            height: 100%;
+        }
+    
+        /* Ensure your content container fills the viewport */
+        .content-container {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+<!-----------------------End background-------------------->
+
+<!-- Importation des fichiers CSS et JS de Leaflet, une bibliothèque pour les cartes interactives -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+        
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""
+    ></script>
+
+    <!-- Importation des fichiers CSS et JS de Leaflet Draw, une extension pour dessiner sur les cartes Leaflet -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+</head>
+<body>
+<!------------------------------ Spinner Start ------------------>
+    <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+     </div>
+<!------------------------------- Spinner End ------------------------>
+
+<!-------------------------------Topbar Start ------------------------>
+<div class="container-fluid bg-dark text-light px-0 py-2">
+     <div class="row gx-0 d-none d-lg-flex">
+         <div class="col-lg-7 px-5 text-start">
+              <div class="h-100 d-inline-flex align-items-center me-4">
+                    <span class="fa fa-phone-alt me-2"></span>
+                    <span>+216 93 26 75 45</span>
+              </div>
+              <div class="h-100 d-inline-flex align-items-center">
+                    <span class="far fa-envelope me-2"></span>
+                    <span>contact@smartforgreen.com</span>
+              </div>
+           </div>
+         <div class="col-lg-5 px-5 text-end">
+             <div class="h-100 d-inline-flex align-items-center mx-n2">
+                    <span>Suivez-Nous:</span>
+                    <a class="btn btn-link text-light" href="https://www.facebook.com/SmartForGreen"><i class="fab fa-facebook-f"></i></a>
+                    <a class="btn btn-link text-light" href="https://www.linkedin.com/company/smart4green/"><i class="fab fa-linkedin-in"></i></a>
+              </div>
+         </div>
+      </div>
+  </div>
+<!-------------------------------- Topbar End -------------------------->
+ 
+
+<!-- Page Header Start -->
+<div class="container-fluid page-header py-1 mb-1 wow fadeIn" data-wow-delay="0.1s">
+    <div class="container text-center py-2">
+        <h1 class="display-3 text-white mb-4 animated slideInDown">Bienvenue {{ appel_pseudo_superviseur }} !</h1>
+        <nav aria-label="breadcrumb animated slideInDown">
+            <ol class="breadcrumb justify-content-center mb-0">
+                <li class="breadcrumb-item"><a href="#">Precisez les emplacements de Vos Cameras ici !</a></li>
+            </ol>
+        </nav>
+    </div>
+</div>
+<!-- Page Header End -->
+<!----------------------------Etape d'avancement--------------------------------------->
+<style>
+    .pagination {
+        margin-top: 25px;
+        size-adjust: 15px;
+        font-size: 1.2rem;
+    }
+</style>
+
+<nav aria-label="...">
+    <ul class="pagination justify-content-center text-center">
+        <li class="page-item"><a class="page-link" >1</a></li>
+        <li class="page-item"><a class="page-link" >2</a></li>
+        <li class="page-item"><a class="page-link" >3</a></li>
+        <li class="page-item active" aria-current="page">
+            <span class="page-link">Etape 4</span>
+        </li>
+    </ul>
+</nav>
+
+<!------------------------------End Etape d'avancement----------------------------------->
+<!--------------Message de succes---------->
+<style>
+    .custom-alert {
+        width: 25rem; /* 1rem is approximately equal to the font size of the root element */
+        margin: 0 auto; /* Center the alert box horizontally */
+    }
+</style>
+
+{% if messages %}
+<div class="alert alert-success alert-dismissible fade show text-center custom-alert" role="alert">
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+<!--------------Message de succes---------->
+
+
+<!--------------------------- Form Start --------------------------->
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="container-fluid pt-3 px-5">
+        <div class="row justify-content-center">
+            <div class="col-md-4 mb-4">
+                <div class="bg-light rounded p-4">
+                    <h6 class="mb-1.25 justify-content-center">Projet Designé</h6>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control rounded" value="{{ votre_projet }}" readonly>
+                    </div>
+
+                    <h6 class="mb-1.25 justify-content-center">Nom de Caméra</h6>
+                    <div class="input-group mb-3">
+                        <input type="text" id="name_cam" class="form-control" placeholder="Nom de Caméra" name="name_cam">    
+                    </div>
+
+                    <h6 class="mb-1.25 justify-content-center">Choissisez le type de Camera</h6>
+                    <!-- Toggle between IP Address/Port and RTSP URL -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="streamType" id="ipPort" value="ipPort" checked>
+                            <label class="form-check-label" for="ipPort">
+                                Caméra local
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="streamType" id="fullRtspUrl" value="fullRtspUrl">
+                            <label class="form-check-label" for="fullRtspUrl">
+                                Caméra distant
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- IP and Port fields (show by default) -->
+                    <div id="ipPortFields">
+                        <h6 class="mb-1.25">Caractéristiques de Caméra local</h6>
+                        <input type="text" id="adresse_cam" class="form-control mb-2" placeholder="Adresse IP" name="adresse_cam">
+                        <table>
+                            <tr>
+                                <td>
+                                    <input type="text" id="num_port" class="form-control mb-2" placeholder="N° Port" name="num_port">
+                                </td>
+                                <td>
+                                    <select id="path" class="form-control mb-2" name="rest_de_path">
+                                        <option value="">Reste de URL RTSP</option>
+                                        <option value="/live/main">CCTV</option>
+                                        <option value="/h264.sdp">IP Camera Phone</option>
+                                        <option value="custom">Custom URL</option>
+                                    </select>
+                                </td>           
+                                <td>
+                                    <input type="text" id="customPath" class="form-control mb-2" name="custom_rest_de_path" style="display:none;" placeholder="URL personnalisée">
+                                </td>                     
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <!-- Full RTSP URL field (hidden by default) -->
+                    <div id="fullRtspUrlField" style="display: none;">
+                        <h6 class="mb-1.25">URL RTSP complet</h6>
+                        <input type="text" id="custom_url" class="form-control mb-2" placeholder="RTSP URL" name="custom_url">
+                    </div>
+
+                    <!-- input pour les cordonnées caché -->
+                    <input type="text" id="coords_cam" class="form-control" name="coords_cam" hidden>    
+
+                    <h6 class="mb-1.25 justify-content-center">Description</h6>
+                    <div class="form-floating">
+                        <textarea class="form-control  mb-1" placeholder="Description" id="description_cam" name="description_cam" style="height: 110px;"></textarea>
+                        <label for="description_cam">Description</label>
+                    </div>
+                    <div class="input-group d-flex justify-content-center">
+                        <button class="btn btn-primary m-2 mx-2" type="submit" value="false" name="ajoutez_un_cam">Ajoutez une autre Caméra</button>
+                        <button class="btn btn-primary m-2 mx-2" type="submit">Enregistrez !</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="bg-light rounded p-4">
+                    <div id="map" style="height: 522px">
+                        <div class="leaflet-control"></div>
+                    </div>       
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!------------------------------------ Form End -------------------------------->
+
+<!------------------------------- Copyright Start -->
+<div class="container-fluid copyright py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                &copy; <a class="border-bottom" href="{% url 'Home' %}">Smart For Green</a>, Tous Droits Réservés.
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-------------------------------------- Copyright End -->
+
+<!--------------------- Back to Top Fleshe -->
+<a href="#" class="btn btn-lg btn-primary btn-lg-square rounded-circle back-to-top"><i class="bi bi-arrow-up"></i></a>
+<!-------------------- Back to Top Fleshe -->
+
+<!------------------------------------------- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/static/lib/wow/wow.min.js"></script>
+<script src="/static/lib/easing/easing.min.js"></script>
+<script src="/static/lib/waypoints/waypoints.min.js"></script>
+<script src="/static/lib/owlcarousel/owl.carousel.min.js"></script>
+<script src="/static/lib/counterup/counterup.min.js"></script>
+<script src="/static/lib/parallax/parallax.min.js"></script>
+<script src="/static/lib/isotope/isotope.pkgd.min.js"></script>
+<script src="/static/lib/lightbox/js/lightbox.min.js"></script>
+<!------------------------------------------- JavaScript Libraries -->
+<!------------------------------------------ Template Javascript -->
+<script src="/static/js/main.js"></script>
+<!------------------------------------------ Template Javascript -->
+
+
+<!----------- script pour le Toggle entre IP Address/Port & RTSP URL -----  -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ipPortRadio = document.getElementById('ipPort');
+        const fullRtspUrlRadio = document.getElementById('fullRtspUrl');
+        const ipPortFields = document.getElementById('ipPortFields');
+        const fullRtspUrlField = document.getElementById('fullRtspUrlField');
+    
+        function toggleInputFields() {
+            if (ipPortRadio.checked) {
+                ipPortFields.style.display = '';
+                fullRtspUrlField.style.display = 'none';
+            } else if (fullRtspUrlRadio.checked) {
+                ipPortFields.style.display = 'none';
+                fullRtspUrlField.style.display = '';
+            }
+        }
+    
+        ipPortRadio.addEventListener('change', toggleInputFields);
+        fullRtspUrlRadio.addEventListener('change', toggleInputFields);
+    
+        toggleInputFields(); // call on load to set the initial state
+    });
+
+    </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var pathSelect = document.getElementById('path');
+        var customPathInput = document.getElementById('customPath');
+    
+        // Listen for changes in the dropdown
+        pathSelect.addEventListener('change', function() {
+            // Show or hide the custom input based on selection
+            if(this.value === 'custom') {
+                customPathInput.style.display = 'block';
+            } else {
+                customPathInput.style.display = 'none';
+                // Update the name attribute to ensure only the selected path is submitted
+                customPathInput.name = "";
+                pathSelect.name = "rest_de_path";
+                // If not 'custom', update rest_de_path immediately
+                updateRestDePath(this.value);
+            }
+        });
+    
+        // Function to update the hidden rest_de_path field or prepare its value for submission
+        function updateRestDePath(value) {
+            // Logic to update rest_de_path value
+            // This might involve setting a hidden input's value to the selected option
+            // Or directly manipulating the value of rest_de_path if it's a visible input field
+        }
+    
+        // Listen for input in the custom URL field
+        customPathInput.addEventListener('input', function() {
+            // Since the user is typing in the custom field, switch the name attribute
+            // This ensures the correct field is submitted
+            customPathInput.name = "rest_de_path";
+            pathSelect.name = "";
+            // Update rest_de_path to the custom input's value as the user types
+            updateRestDePath(this.value);
+        });
+    });
+    </script>
+    
+    
+    
+<!----------- script pour le Toggle entre IP Address/Port & RTSP URL -----  -->
+
+<!----------------------Script Map Leaflet (marker)----------------->
+<script>
+    // Définir une icône personnalisée pour les marqueurs
+    var customIcon = L.icon({
+        iconUrl: '/static/img/icon/icon-14.png', // Remplacez par le chemin de votre icône
+        iconSize: [32, 32], // Taille de l'icône en pixels
+    });
+
+    // Initialisation de la carte avec un point central et un niveau de zoom
+    var map = L.map("map").setView([36.89186227222111, 10.187473488849253], 16.5);
+
+    // Ajout d'une couche de carte basée sur OpenStreetMap 
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        attribution: "Leaflet Map ©", // Attribution de la carte, requis pour la plupart des fournisseurs de tuiles
+    }).addTo(map); // Ajoute la couche à notre carte
+
+    // Création d'un groupe pour stocker les éléments dessinés par l'utilisateur
+    var drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems); // Ajoute le groupe à la carte
+
+    // Configuration des outils de dessin avec Leaflet Draw
+    var drawControl = new L.Control.Draw({
+        draw: {
+            marker: {
+                // Ici, vous pouvez spécifier des options pour le dessin de marqueurs
+            },
+            // Désactiver les options de dessin pour les autres formes
+            polyline: false,
+            rectangle: false,
+            circle: false,
+            polygon: false,
+            circlemarker: false,
+        },
+        edit: {
+            featureGroup: drawnItems, // Groupe de fonctionnalités pour l'édition
+            remove: true // Permet la suppression d'éléments
+        },
+    });
+    
+    map.addControl(drawControl); // Ajoute le contrôle de dessin à la carte
+
+    // Gestionnaire d'événement pour les éléments dessinés
+    map.on("draw:created", function(e) {
+        var type = e.layerType, layer = e.layer;
+
+        if (type === "marker") {
+            // Vérifie s'il y a déjà un marqueur wele lee
+            if(drawnItems.getLayers().length === 0) {
+                // Ajouti l nouveau marqueur 
+                drawnItems.addLayer(L.marker(layer.getLatLng(), {icon: customIcon}));
+
+                // Convertit le marqueur en format GeoJSON pour accéder à ses coordonnées à la bd
+                var myjson = drawnItems.toGeoJSON();
+                let coords = myjson.features[0].geometry.coordinates;
+                
+                const multiMarker = {
+                    type: "Point",
+                    coordinates: coords 
+                };
+
+                // Utilisation des coordonnées, par exemple pour remplir un champ de formulaire
+                document.getElementById("coords_cam").value = JSON.stringify(multiMarker);
+
+            } else {
+                alert("Seul un marqueur peut être dessiné à la fois !"); // Alerte ken deéja l user sawer marquer !!
+            }
+        }
+    });
+
+    // événement pour la suppression des données ken fasa5na l marker en cours ( j'ai dis bien el marker en cours khw !!)
+    map.on("draw:deleted", function(e) {
+        var layers = e.layers;
+        layers.eachLayer(function(layer) {
+            if (layer instanceof L.Marker) {
+                // si l user 9arer yfasaa5 le marker en cours; les autres parametres yetfas5ou m3ah (nom/adresses/etc)
+
+                document.getElementById("coords_cam").value = "";
+                document.getElementById("name_cam").value = "";
+                document.getElementById("num_port").value = "";
+                document.getElementById("rest_de_path").value = "";
+                document.getElementById("adresse_cam").value = "";
+                document.getElementById("custom_url").value = "";
+                document.getElementById("description_cam").value = "";
+                //nzid ce que je veux là, xD
+            }
+        });
+    });
+
+    //affichage des polygones de projet en cours
+{% for zone in zones %}
+    var geojson_str = "{{ zone.coords_polys.json|escapejs }}"; // Récupère la chaîne GeoJSON
+    var geojson = JSON.parse(geojson_str); // Convertit en objet GeoJSON
+        var polygonLayer = L.geoJSON(geojson).addTo(map); // Ajoute le polygone à la carte
+    
+    // Crée un contenu pour le tooltip(légende) et l'associe au polygone
+    var tooltipContent = "<b>{{ zone.name_zone }}</b><br>{{ zone.description_zone }}";
+    polygonLayer.bindTooltip(tooltipContent, { permanent: true, direction: 'center' }).openTooltip();
+    
+{% endfor %}
+
+
+    //affichage des marker de projet en cours
+
+{% for cam in cams %}
+    var geojson_str = "{{ cam.coords_cam.json|escapejs }}"; // Retrieve the GeoJSON string
+    var geojson = JSON.parse(geojson_str); // Parse the GeoJSON string into an object
+
+    // Define the custom icon
+    var customIcon = L.icon({
+        iconUrl: '/static/img/icon/icon-14.png', // Path to your custom icon
+        iconSize: [32, 32], // Icon size in pixels
+    });
+
+    // Create the marker with the custom icon
+    var marker = L.geoJSON(geojson, {
+        pointToLayer: function (feature, latlng) {
+            return L.marker(latlng, { icon: customIcon });
+        }
+    }).addTo(map); // Add the marker to the map
+
+    // Define the popup content
+    var popupContent = "<b>{{ cam.name_cam|escapejs }}</b><br>{{ cam.adresse_cam|escapejs }}";
+
+    // Bind the popup to the marker
+    marker.bindPopup(popupContent);
+{% endfor %}
+
+
+</script>
+
+
+<!---------------------End Script Map Leaflet---------------->
+</body>
+</html>

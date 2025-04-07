@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Map</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link rel="icon" type="image/png" href="/static/img/icon/logo_S4G.png">
+    
+    <!--------------- Google Web Fonts --------------->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;500&display=swap" rel="stylesheet">  
+    <!--------------- Icon Font Stylesheet ------------>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-------------- Libraries Stylesheet ------------>
+    <link href="/static/lib/animate/animate.min.css" rel="stylesheet">
+    <link href="/static/lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+    <link href="/static/lib/lightbox/css/lightbox.min.css" rel="stylesheet">
+    <!------------- Customized Bootstrap Stylesheet ------------>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <!------------- Template Stylesheet ------------>
+    <link href="/static/css/style.css" rel="stylesheet">
+
+    <!-- Importation des fichiers CSS et JS de Leaflet, une bibliothèque pour les cartes interactives -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+        
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""
+    ></script>
+
+    <!-- Importation des fichiers CSS et JS de Leaflet Draw, une extension pour dessiner sur les cartes Leaflet -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+</head>
+<body>
+<!------------------------------ Spinner Start ------------------>
+    <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem; "></div>
+        <span class="ms-3">Loading...</span>
+     </div>
+<!------------------------------- Spinner End ------------------------>
+
+<!-------------------------------Topbar Start ------------------------>
+<div class="container-fluid bg-dark text-light px-0 py-2">
+     <div class="row gx-0 d-none d-lg-flex">
+         <div class="col-lg-7 px-5 text-start">
+              <div class="h-100 d-inline-flex align-items-center me-4">
+                    <span class="fa fa-phone-alt me-2"></span>
+                    <span>+216 93 26 75 45</span>
+              </div>
+              <div class="h-100 d-inline-flex align-items-center">
+                    <span class="far fa-envelope me-2"></span>
+                    <span>contact@smartforgreen.com</span>
+              </div>
+           </div>
+         <div class="col-lg-5 px-5 text-end">
+             <div class="h-100 d-inline-flex align-items-center mx-n2">
+                    <span>Suivez-Nous:</span>
+                    <a class="btn btn-link text-light" href="https://www.facebook.com/SmartForGreen"><i class="fab fa-facebook-f"></i></a>
+                    <a class="btn btn-link text-light" href="https://www.linkedin.com/company/smart4green/"><i class="fab fa-linkedin-in"></i></a>
+              </div>
+         </div>
+      </div>
+  </div>
+<!-- Background Style -->
+<style>
+        body {
+            background-image: url('/static/img/forestbackground2.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin: 0; /* Remove default body margin */
+            padding: 0; /* Remove default body padding */
+        }
+    
+        /* Add this style to make the page fill the viewport */
+        html, body {
+            height: 100%;
+        }
+    
+        /* Ensure your content container fills the viewport */
+        .content-container {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Custom menu style */
+        .custom-menu {
+            background-color: #343a40; /* Change background color */
+            padding: 10px; /* Add padding */
+            border-radius: 5px; /* Add border radius */
+        }
+
+        .custom-menu select,
+        .custom-menu button {
+            margin-bottom: 10px; /* Add margin between elements */
+        }
+
+        .custom-menu button {
+            width: 100%; /* Make the button full width */
+        }
+</style>
+<!-------------------------------- Topbar End -------------------------->
+
+
+<div class="container-fluid col-sm p-4 ">
+    <div class="row">
+    <!------------------sidebar------------------->
+    <div class="col-sm-auto bg-light sticky-top rounded mb-4">
+        <div class="d-flex flex-sm-column flex-row flex-nowrap bg-light align-items-center sticky-top">
+            <a href="{% url 'dashboard_client' %}" class="d-block p-3 link-dark text-decoration-none" title="" data-bs-toggle="tooltip" data-bs-placement="right">
+                <img src="/static/img/icon/logo_S4G.png" alt="Logo" style="width: 42px; height: 40px; margin-top: 10px;">
+            </a>
+            
+            <ul class="nav nav-pills nav-flush flex-sm-column flex-row flex-nowrap mb-auto mx-auto text-center align-items-center">
+                <li>
+                    <a href="{% url 'dashboard_client' %}" class="btn nav-link py-1 px-2" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-custom-class="custom-tooltip" data-bs-title="Dashboard">
+                        <i class="bi bi-speedometer2 fs-2"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'map_client' %}" class="btn nav-link py-1 px-2" title="" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-custom-class="custom-tooltip" data-bs-title="Map">
+                        <i class="bi bi-geo-alt fs-2"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'stream_client' %}" class="btn nav-link py-1 px-2" title="" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-custom-class="custom-tooltip" data-bs-title="Video Feed">
+                        <i class="bi bi-camera-video fs-2"></i>
+                    </a>
+                </li>
+                <div class="dropdown  border-top ">
+                    <a href="#" class="d-flex align-items-center justify-content-center p-3 link-dark text-decoration-none dropdown-toggle" id="dropdownUser3" data-bs-toggle="dropdown" aria-expanded="false">
+                      <img src="image" alt="mdo" width="24" height="24" class="rounded-circle">
+                    </a>
+                    <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser3" >
+                      <li><a class="dropdown-item" href="{% url 'profile_client' %}">Profile</a></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item" href="{% url 'logout' %}">Déconnexion</a></li>
+                    </ul>
+                </div>
+            </ul>
+        </div>
+
+</div>
+<!-- Main Content -->
+<div class="col-sm p-4 min-vh-10">
+<!----------- Bonjour Message ---------------->
+<div class="bg-light rounded p-3 mb-4 ">
+<h3 class="welcome-text">Bonjour, <span class="text-black fw-bold"> {{ pseudo }}</span></h3>
+<h5 class="welcome-sub-text">Vous êtes sur le Map !</h5>
+<h6 class="text-end"> Connecté en tant que Client : '{{ pseudo }}'</h6>
+</div>
+
+
+  <!-- Project Section -->
+  <div class="row justify-content-center">
+    <div class="col-lg-3">
+        <div class="bg-light rounded p-3 mb-3">
+            <div class="grid-margin stretch-card">
+                <form method="get">
+                    <select name="selected_project" class="form-select rounded">
+                        <option value="">Sélectionnez un projet</option>
+                        {% for project in projects %}
+                            <option value="{{ project.name_project }}">{{ project.name_project }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-primary mt-2" type="submit">Filtrer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8 mb-4">
+        <div class="bg-light rounded p-3">
+            <div id="map" style="height: 400px">
+                <div class="leaflet-control"></div>
+            </div>       
+        </div>
+    </div>
+</div>
+
+
+</div>
+<!------------------------------- Copyright Start ----------------->
+<div class="container-fluid copyright py-4 ">
+    <div class="container ">
+        <div class="row ">
+            <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                &copy; <a class="border-bottom" href="Home">Smart For Green</a>, Tous Droits Réservés.
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-------------------------------------- Copyright End -->
+
+<!--------------------- Back to Top Fleshe -->
+<a href="#" class="btn btn-lg btn-primary btn-lg-square rounded-circle back-to-top"><i class="bi bi-arrow-up"></i></a>
+<!-------------------- Back to Top Fleshe -->
+
+<!------------------------------------------- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="/static/lib/wow/wow.min.js"></script>
+<script src="/static/lib/easing/easing.min.js"></script>
+<script src="/static/lib/waypoints/waypoints.min.js"></script>
+<script src="/static/lib/owlcarousel/owl.carousel.min.js"></script>
+<script src="/static/lib/counterup/counterup.min.js"></script>
+<script src="/static/lib/parallax/parallax.min.js"></script>
+<script src="/static/lib/isotope/isotope.pkgd.min.js"></script>
+<script src="/static/lib/lightbox/js/lightbox.min.js"></script>
+
+<!------------------------------------------- JavaScript Libraries -->
+<!------------------------------------------ Template Javascript -->
+<script src="/static/js/main.js"></script>
+<!------------------------------------------ Template Javascript -->
+
+<!---ce script est pour les tooltips--->
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+    </script>
+
+    <!----------------------Script Map Leaflet (marker)----------------->
+<script>
+    var map = L.map("map").setView([36.89186227222111, 10.187473488849253], 15
+    );
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        attribution: "Leaflet Map ©",
+    }).addTo(map);
+
+    // Afficher les zones sur la carte
+    {% for zone in zones %}
+    var geojson_str = "{{ zone.coords_polys.json|escapejs }}"; // Récupère la chaîne GeoJSON
+    var geojson = JSON.parse(geojson_str); // Convertit en objet GeoJSON
+        var polygonLayer = L.geoJSON(geojson).addTo(map); // Ajoute le polygone à la carte
+    
+    // Crée un contenu pour le tooltip(légende) et l'associe au polygone
+    var tooltipContent = "<b>{{ zone.name_zone }}<b>";
+    polygonLayer.bindTooltip(tooltipContent, { permanent: true, direction: 'center' }).openTooltip();
+    
+    {% endfor %}
+
+
+    {% for cam in cams %}
+    {% if cam.coords_cam %}
+        var geojson_str = '{{ cam.coords_cam.json|escapejs }}'; // Récupérer la chaîne GeoJSON
+        var geojson = JSON.parse(geojson_str); // Parsez la chaîne GeoJSON en un objet
+
+        // Définir l'icône personnalisée
+        var customIcon = L.icon({
+            iconUrl: '/static/img/icon/icon-14.png', // Chemin vers votre icône personnalisée
+            iconSize: [32, 32], // Taille de l'icône en pixels
+        });
+
+        // Créer le marqueur avec l'icône personnalisée
+        var marker = L.geoJSON(geojson, {
+            pointToLayer: function (feature, latlng) {
+                return L.marker(latlng, { icon: customIcon });
+            }
+        }).addTo(map); // Ajouter le marqueur à la carte
+
+        // Définir le contenu de la popup
+        var popupContent = "<b>{{ cam.name_cam|escapejs }}</b><br>{{ cam.adresse_cam|escapejs }}";
+
+        // Lier la popup au marqueur
+        marker.bindPopup(popupContent);
+    {% endif %}
+{% endfor %}
+</script>
+
+</body>
+</html>

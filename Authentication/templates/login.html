@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Se Connecter</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <!-- Favicon -->
+    <link href="/static/img/icon/logo_S4G.png" rel="icon">
+    <!-- Stylesheet -->
+    <link href="/static/css/stylelogin.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url('static/img/forestbackground.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper login-3">
+        <div class="container">
+            <div class="col-left">
+                <div class="login-text">
+                    <h2><img src="static/img/icon/logo_S4G.png"  alt="Logo"></h2>
+                    <p>
+                        Si vous êtes un client ou un superviseur, accédez à votre espace dédié ici ! 
+                    </p>
+                    <a class="btn" href="Home">Home</a>
+                </div>
+            </div>
+            <div class="col-right">
+                <div class="login-form">
+                    <h2>Se Connecter</h2>
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ form.pseudo }}
+                            <h4>
+                            <div class="text-danger" role="alert">{{ form.pseudo.errors }}</div></h4>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.password }}<h4>
+                            <div class="text-danger" role="alert">{{ form.password.errors }}</div></h4>
+                        </div>
+                
+                        <input class="btn" type="submit" value="Connecter" />
+                            <p>
+                                <a href="">Mot de passe oublié ?</a>
+                            </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Choix</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <!-- Favicon -->
+    <link href="/static/img/logo_S4G.png" rel="icon">
+    <!-- Stylesheet -->
+    <link href="/static/css/stylelogin.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url('/static/img/forestbackground2.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .top-header {
+            background-color: #10442c; /* Green */
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <header class="top-header"></header>
+
+    <div class="wrapper login-3">
+        <div class="container">
+            <div class="col-left">
+                <div class="login-text">
+                    <h2><img src="/static/img/icon/NewClient.png" alt="Logo"></h2>
+                    <p>un Nouveau Client ?</p>
+                    <a class="btn" href="{% url 'ajout_client' %}">Créez Un Compte!</a>
+                </div>
+            </div>
+            <div class="col-right">
+                <div class="login-form">
+                    <h2 style="text-align: center;"><img src="/static/img/icon/ClientAlready.png"  alt="Logo"></h2>
+                    <p style="text-align: center;">Client existant ?</p>
+                    <div class="text-center mb-3" style="display: flex; justify-content: center;">
+                        <button class="btn btn-primary" style="background-color: #50ac54; border-color: black;" onclick="location.href='/client-existant'" type="button">Choisissez-le ici!</button>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>

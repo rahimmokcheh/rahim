@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  /* Reset CSS */
+  body, h1, p, table {
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Container styles */
+  .container {
+    width: 100%;
+    padding: 10px;
+    background-color: white; /* Changed background color */
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+  }
+
+  /* Logo styles */
+  .logo {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  /* Header styles */
+  .header {
+    background-color: #175b27;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    border-radius: 10px 10px 0 0;
+    font-size: 24px;
+  }
+  
+  /* Content styles */
+  .content {
+    padding: 20px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333;
+  }
+  
+  /* Table styles */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+  }
+  th {
+    background-color: #175b27;
+    color: white;
+    font-weight: bold;
+  }
+  
+  /* Footer styles */
+  .footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #666;
+  }
+  
+  /* Button styles */
+  .button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #175b27;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+  }
+
+  /* Media Queries */
+  @media screen and (max-width: 600px) {
+    .container {
+      padding: 5px;
+    }
+    .header {
+      font-size: 20px;
+    }
+    .content {
+      padding: 10px;
+      font-size: 14px;
+    }
+    .button {
+      padding: 8px 16px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwGsNdCbePtyXnzUnXPQRXuonpk3zAMq3OSkgEZJttQ-mvDz_iIQHtEmBU-RckgC7I_g8&usqp=CAU" alt="Logo" width="100">
+    </div>
+    <div class="header">
+      <h1>Rapport Quotidien</h1>
+    </div>
+    <div class="content">
+      <p>Ci-joint vous trouvez un rapport quotidien pour votre Usine</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Caméras</th>
+            <th>Présence De</th>
+            <th>Confiance</th>
+            <th>Détecté à</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Your dynamic table content goes here -->
+          {% for detection_result in detection_results %}
+          {% for data in detection_result.detection_data.data %}
+          {% if data.6 == "person" %}
+          <tr>
+            <td>{{ detection_result.camera_name }}</td>
+            <td>{{ data.6 }}</td> {# Assuming the class_name is at index 6 #}
+            <td>{{ data.4 }}</td> {# Assuming the confidence is at index 4 #}
+            <td>{{ detection_result.detected_at }}</td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="footer">
+      <p>This is an automated message, please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
