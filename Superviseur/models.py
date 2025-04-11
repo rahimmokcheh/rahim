@@ -95,4 +95,3 @@ class DetectionResult(models.Model):
         return f"Résultat des détection pour ({self.camera_name}) Detecté à ({self.detected_at})"
 
 
-

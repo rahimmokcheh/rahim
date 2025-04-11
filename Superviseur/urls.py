@@ -24,6 +24,9 @@ urlpatterns = [
         path('api/clients/', views.client_list, name='client_list'),
         path('api/projects/<str:client_pseudo>/', views.project_list, name='project_list'),
         path('api/cameras/<str:project_name>/', views.camera_list, name='camera_list'),
-        path('video_feed/<str:cam_name>/', views.video_feed, name='video_feed'),
+
+    # Nouvelles URLs pour la gestion des images
+    path('api/camera/<str:cam_name>/upload/', views.receive_image, name='receive_image'),
+    path('api/camera/<str:cam_name>/latest/', views.get_latest_image, name='get_latest_image'),
 
     ]
