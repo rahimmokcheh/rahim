@@ -367,7 +367,7 @@ print(f'You are now using {device}')
 print('---------------------------')
 
 # Chargement du modèle YOLO pendant le démarrage de l'application
-model = YOLO('Model.pt').to(device)
+model = YOLO('FireShield.pt').to(device)
 
 # Fonction pour extraire les détections d'objets dans un DataFrame Pandas et un format JSON
 def get_pandas(results, cam_name):
@@ -436,7 +436,7 @@ def process_image(image_data, cam_name):
             
             # Nommer et sauvegarder l'image
             timestamp = datetime.now().strftime("%H_%M_%S")
-            filename = f"{timestamp}_{cam_name}.jpeg"
+            filename = f"{timestamp}_{cam_name}.jpg"
             filepath = os.path.join(save_dir, filename)
             cv2.imwrite(filepath, frame_with_boxes)
             
@@ -447,7 +447,7 @@ def process_image(image_data, cam_name):
             ).start()
         
         # Encoder l'image avec les détections pour l'affichage
-        _, jpeg = cv2.imencode('.jpeg', res_plotted)
+        _, jpeg = cv2.imencode('.jpg', res_plotted)
         
         return jpeg.tobytes(), result_df, filepath
     except Exception as e:
@@ -523,7 +523,61 @@ def get_latest_image(request, cam_name):
             print(f"Caméra non trouvée: {cam_name}")
             return JsonResponse({'error': f'Caméra non trouvée: {cam_name}'}, status=404)
         
-        # Essayer d'abord de récupérer depuis la base de données
+        # Tenter de récupérer directement depuis la caméra
+        try:
+            # Construire l'URL de la caméra à partir du modèle
+            if cam.is_full_rtsp_url and cam.custom_url:
+                camera_url = cam.custom_url
+                if camera_url.startswith('rtsp://'):
+                    parts = camera_url.replace('rtsp://', '').split('/')
+                    if len(parts) > 0:
+                        ip_port = parts[0]
+                        camera_url = f"http://{ip_port}/image.jpeg"
+            else:
+                ip = cam.adresse_cam
+                port = cam.num_port if cam.num_port else "8080"
+                camera_url = f"http://{ip}:{port}/image.jpeg"
+            
+            print(f"Tentative de récupération depuis l'URL: {camera_url}")
+            
+            # Récupérer l'image depuis l'URL
+            import requests
+            response = requests.get(camera_url, timeout=3)
+            
+            if response.status_code == 200:
+                # Vérifier si c'est bien une image JPEG
+                if response.content[:2] == b'\xff\xd8':  # Signature d'en-tête JPEG
+                    # Préparer le dossier de sauvegarde avec la date actuelle
+                    current_date = datetime.now().strftime("%d_%m_%Y")
+                    save_dir = os.path.join("C:\\Users\\Hp\\Desktop\\rahimcam", current_date)
+                    if not os.path.exists(save_dir):
+                        os.makedirs(save_dir)
+                    
+                    # Créer un nom de fichier unique avec horodatage
+                    timestamp = datetime.now().strftime("%H_%M_%S")
+                    filename = f"{timestamp}_{cam_name}.jpg"
+                    filepath = os.path.join(save_dir, filename)
+                    
+                    # Sauvegarder l'image comme nouvelle entrée
+                    with open(filepath, 'wb') as f:
+                        f.write(response.content)
+                    
+                    # Créer une nouvelle entrée dans la base de données
+                    detection_result = DetectionResult.objects.create(
+                        camera_name=cam,
+                        path_to_image=filepath,
+                        detection_data={},
+                        user=cam.name_project.pseudo
+                    )
+                    
+                    # Retourner l'image directement
+                    return HttpResponse(response.content, content_type='image/jpeg')
+                else:
+                    print("Le contenu reçu n'est pas une image JPEG valide")
+        except Exception as e:
+            print(f"Erreur lors de la récupération depuis la caméra: {str(e)}")
+        
+        # Si la récupération directe échoue, récupérer la dernière image enregistrée
         try:
             latest_detection = DetectionResult.objects.filter(
                 camera_name__name_cam=cam_name
@@ -537,70 +591,11 @@ def get_latest_image(request, cam_name):
         except Exception as e:
             print(f"Erreur lors de la récupération de la détection: {str(e)}")
         
-        # Si aucune image n'est disponible dans la base de données, 
-        # essayer de récupérer directement depuis la caméra
-        try:
-            # Construire l'URL de la caméra à partir du modèle
-            if cam.is_full_rtsp_url and cam.custom_url:
-                # Si c'est une URL complète personnalisée (comme pour IP Webcam)
-                # Convertir l'URL RTSP en URL HTTP pour une image fixe si possible
-                # Par exemple pour IP Webcam, on peut transformer rtsp://... en http://...
-                camera_url = cam.custom_url
-                
-                # Si l'URL est au format RTSP, convertir en HTTP pour récupérer une image fixe
-                if camera_url.startswith('rtsp://'):
-                    # Exemple de conversion pour IP Webcam
-                    parts = camera_url.replace('rtsp://', '').split('/')
-                    if len(parts) > 0:
-                        ip_port = parts[0]
-                        camera_url = f"http://{ip_port}"
-            else:
-                # Construire l'URL à partir des composants
-                ip = cam.adresse_cam
-                port = cam.num_port if cam.num_port else "8080"  # Port par défaut pour IP Webcam
-                
-                # URL pour une image fixe (adapté à IP Webcam ou d'autres caméras IP)
-                camera_url = f"http://{ip}:{port}"
-            
-            print(f"Tentative de récupération depuis l'URL: {camera_url}")
-            
-            # Récupérer l'image depuis l'URL
-            import requests
-            response = requests.get(camera_url, timeout=3)
-            
-            if response.status_code == 200:
-                # Optionnel : sauvegarder l'image et créer une entrée dans la base de données
-                # pour les prochaines requêtes
-                current_date = datetime.now().strftime("%d_%m_%Y")
-                save_dir = os.path.join("C:\\Users\\Heni\\OneDrive\\Bureau\\sauvegarde", current_date)
-                if not os.path.exists(save_dir):
-                    os.makedirs(save_dir)
-                
-                timestamp = datetime.now().strftime("%H_%M_%S")
-                filename = f"{timestamp}_{cam_name}.jpeg"
-                filepath = os.path.join(save_dir, filename)
-                
-                with open(filepath, 'wb') as f:
-                    f.write(response.content)
-                
-                # Créer une entrée dans la base de données
-                DetectionResult.objects.create(
-                    camera_name=cam,
-                    path_to_image=filepath,
-                    detection_data={},
-                    user=cam.name_project.pseudo
-                )
-                
-                # Retourner l'image directement
-                return HttpResponse(response.content, content_type='image.jpeg')
-        except Exception as e:
-            print(f"Erreur lors de la récupération depuis la caméra: {str(e)}")
-        
         # Si aucune image n'est disponible, utiliser l'image par défaut
-        default_image_path = r"C:\Users\Heni\OneDrive\Bureau\pfeproject\Site_web\profile_pics\téléchargement.png"
+        default_image_path = r"C:\Users\Hp\Desktop\PFE_00\PFE_00\Site_web\profile_pics\téléchargement.png"
         if os.path.exists(default_image_path):
             with open(default_image_path, 'rb') as f:
-                return HttpResponse(f.read(), content_type='image/jpeg')
+                return HttpResponse(f.read(), content_type='image/png')  # Notez image/png si c'est un PNG
                 
         return HttpResponse(status=204)  # No Content
         
@@ -609,8 +604,3 @@ def get_latest_image(request, cam_name):
         print(f"Erreur dans get_latest_image: {str(e)}")
         print(traceback.format_exc())
         return JsonResponse({'error': f'Erreur: {str(e)}'}, status=500)
-
-
-
-
-        #daphne Site_web.asgi:application

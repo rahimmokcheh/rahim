@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 
+
 urlpatterns = [
 
     #les 4 etapes pour la creation d'un nouveau client 
@@ -28,5 +29,4 @@ urlpatterns = [
     # Nouvelles URLs pour la gestion des images
     path('api/camera/<str:cam_name>/upload/', views.receive_image, name='receive_image'),
     path('api/camera/<str:cam_name>/latest/', views.get_latest_image, name='get_latest_image'),
-
     ]
