@@ -43,10 +43,12 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
 
     'corsheaders',
+      'channels',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -78,6 +80,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'Site_web.wsgi.application'
+ASGI_APPLICATION = 'Site_web.asgi.application'
+
+
 
 #l'internationalisation
 # Database
@@ -130,7 +135,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS= [os.path.join(BASE_DIR, 'Site_web', 'static')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Site_web', 'static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
