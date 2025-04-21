@@ -346,8 +346,9 @@ def camera_list(request, project_name):
     cameras = list(Cam.objects.filter(name_project__name_project=project_name).values('name_cam', 'adresse_cam', 'num_port'))
     return JsonResponse(cameras, safe=False)
 
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, StreamingHttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators import gzip
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -358,6 +359,7 @@ import torch
 import pandas as pd
 import os
 import json
+import numpy as np
 from datetime import datetime
 import threading
 
@@ -371,8 +373,6 @@ model = YOLO('FireShield.pt').to(device)
 
 # Fonction pour extraire les détections d'objets dans un DataFrame Pandas et un format JSON
 def get_pandas(results, cam_name):
-    # Cette fonction reste essentiellement la même
-    # [Garder le code existant de cette fonction]
     boxes_list = results[0].boxes.data.tolist()
     columns = ['x_min', 'y_min', 'x_max', 'y_max', 'confidence', 'class_id']
 
@@ -399,9 +399,9 @@ def get_pandas(results, cam_name):
         print(f'Nombres d\'objets détectés: {total_objects}')
         print(result_df_json)
         return result_df, json_data
-    return result_df, {}
+    return result_df, json.loads(json_data_str if json_data_str else '{}')
 
-# Nouvelle fonction pour traiter une image unique
+# Fonction pour traiter une image unique
 def process_image(image_data, cam_name):
     try:
         # Décoder l'image depuis les bytes
@@ -416,7 +416,7 @@ def process_image(image_data, cam_name):
         res_plotted = results[0].plot()
         
         # Extraction des résultats de détection
-        result_df, result_df_json = get_pandas(results, cam_name)
+        result_df, result_json = get_pandas(results, cam_name)
         
         # Création d'un répertoire pour sauvegarder les images détectées
         current_date = datetime.now().strftime("%d_%m_%Y")
@@ -425,26 +425,45 @@ def process_image(image_data, cam_name):
             os.makedirs(save_dir)
         
         # Traitement des détections et sauvegarde
-        filepath = None
+        detections_saved = False
         if not result_df.empty:
             frame_with_boxes = frame.copy()
+            
+            # Dessin des bounding boxes et sauvegarde des images avec détections
             for index, row in result_df.iterrows():
                 class_name = row['class_name']
                 x_min, y_min, x_max, y_max = int(row['x_min']), int(row['y_min']), int(row['x_max']), int(row['y_max'])
                 cv2.rectangle(frame_with_boxes, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
                 cv2.putText(frame_with_boxes, class_name, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                
+                # Nommer et sauvegarder l'image pour chaque détection
+                timestamp = datetime.now().strftime("%H_%M_%S")
+                filename = f"{timestamp}_{cam_name}_{class_name}.jpg"
+                filepath = os.path.join(save_dir, filename)
+                
+                # Sauvegarder l'image uniquement si c'est la première détection (pour éviter des duplications)
+                if not detections_saved:
+                    cv2.imwrite(filepath, frame_with_boxes)
+                    detections_saved = True
+                    
+                    # Sauvegarder les résultats dans un thread séparé
+                    threading.Thread(
+                        target=save_detection_results,
+                        args=(cam_name, filepath, result_json)
+                    ).start()
             
-            # Nommer et sauvegarder l'image
+            # Si aucune détection spécifique n'a été enregistrée, sauvegarder l'image générale
+            if not detections_saved:
+                timestamp = datetime.now().strftime("%H_%M_%S")
+                filename = f"{timestamp}_{cam_name}.jpg"
+                filepath = os.path.join(save_dir, filename)
+                cv2.imwrite(filepath, frame_with_boxes)
+        else:
+            # Sauvegarder l'image originale si aucune détection n'est présente
             timestamp = datetime.now().strftime("%H_%M_%S")
-            filename = f"{timestamp}_{cam_name}.jpg"
+            filename = f"{timestamp}_{cam_name}_no_detection.jpg"
             filepath = os.path.join(save_dir, filename)
-            cv2.imwrite(filepath, frame_with_boxes)
-            
-            # Sauvegarder les résultats dans un thread séparé
-            threading.Thread(
-                target=save_detection_results,
-                args=(cam_name, filepath, result_df_json)
-            ).start()
+            cv2.imwrite(filepath, frame)
         
         # Encoder l'image avec les détections pour l'affichage
         _, jpeg = cv2.imencode('.jpg', res_plotted)
@@ -457,10 +476,12 @@ def process_image(image_data, cam_name):
 # Fonction extraite pour sauvegarder les résultats en DB
 def save_detection_results(cam_name, filepath, detection_data):
     try:
+        # Récupérer l'instance de la caméra et ses informations associées
         camera_instance = Cam.objects.get(name_cam=cam_name)
         project_instance = camera_instance.name_project
         client_instance = project_instance.pseudo
 
+        # Créer une nouvelle instance de DetectionResult
         detection_result_instance = DetectionResult(
             camera_name=camera_instance,
             path_to_image=filepath,
@@ -468,6 +489,7 @@ def save_detection_results(cam_name, filepath, detection_data):
             user=client_instance,
         )
         detection_result_instance.save()
+        print(f"Résultat de détection sauvegardé pour {cam_name}: {filepath}")
     except Exception as e:
         print(f"Erreur lors de la sauvegarde des résultats : {e}")
 
@@ -494,11 +516,13 @@ def receive_image(request, cam_name):
         if processed_image is None:
             return JsonResponse({'error': f'Erreur de traitement: {filepath}'}, status=500)
         
-        # Stocker l'image traitée pour l'affichage dans le dashboard
-        # (Vous pouvez utiliser une structure de données en mémoire ou une base de données)
+        # Enregistrer l'image traitée dans une variable de cache pour l'affichage dans le dashboard
+        # Vous pouvez utiliser le cache Django, Redis, ou une autre solution selon votre besoin
         cache_key = f"latest_image_{cam_name}"
-        # Vous pouvez utiliser Django cache, Redis, ou une autre solution selon votre besoin
+        # Stockage de l'image traitée et des détections pour un accès ultérieur
+        # Implémentez cette partie selon votre architecture
         
+        # Construire la réponse
         response_data = {
             'status': 'success',
             'message': 'Image traitée avec succès',
@@ -547,31 +571,12 @@ def get_latest_image(request, cam_name):
             if response.status_code == 200:
                 # Vérifier si c'est bien une image JPEG
                 if response.content[:2] == b'\xff\xd8':  # Signature d'en-tête JPEG
-                    # Préparer le dossier de sauvegarde avec la date actuelle
-                    current_date = datetime.now().strftime("%d_%m_%Y")
-                    save_dir = os.path.join("C:\\Users\\Hp\\Desktop\\rahimcam", current_date)
-                    if not os.path.exists(save_dir):
-                        os.makedirs(save_dir)
+                    # Traiter l'image avec le modèle IA
+                    processed_image, detections, filepath = process_image(response.content, cam_name)
                     
-                    # Créer un nom de fichier unique avec horodatage
-                    timestamp = datetime.now().strftime("%H_%M_%S")
-                    filename = f"{timestamp}_{cam_name}.jpg"
-                    filepath = os.path.join(save_dir, filename)
-                    
-                    # Sauvegarder l'image comme nouvelle entrée
-                    with open(filepath, 'wb') as f:
-                        f.write(response.content)
-                    
-                    # Créer une nouvelle entrée dans la base de données
-                    detection_result = DetectionResult.objects.create(
-                        camera_name=cam,
-                        path_to_image=filepath,
-                        detection_data={},
-                        user=cam.name_project.pseudo
-                    )
-                    
-                    # Retourner l'image directement
-                    return HttpResponse(response.content, content_type='image/jpeg')
+                    if processed_image:
+                        # Retourner l'image traitée directement
+                        return HttpResponse(processed_image, content_type='image/jpeg')
                 else:
                     print("Le contenu reçu n'est pas une image JPEG valide")
         except Exception as e:
