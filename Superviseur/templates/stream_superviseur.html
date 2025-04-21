@@ -39,7 +39,7 @@
          <div class="col-lg-7 px-5 text-start">
               <div class="h-100 d-inline-flex align-items-center me-4">
                     <span class="fa fa-phone-alt me-2"></span>
-                    <span>+216 93 26 75 45</span>
+                    <span>‪+216 93 26 75 45‬</span>
               </div>
               <div class="h-100 d-inline-flex align-items-center">
                     <span class="far fa-envelope me-2"></span>
@@ -235,7 +235,7 @@
 <!---ce script est pour la selection et affichage de streams--->
 <script>
     window.onload = function() {
-        // Fetch the client list on window load
+        // Conserver le code existant pour charger les clients
         fetch('/api/clients/')
             .then(response => response.json())
             .then(data => {
@@ -245,140 +245,164 @@
                     select.appendChild(option);
                 });
             })
-            .catch(error => console.error('Error fetching clients:', error)); // Add basic error handling
+            .catch(error => console.error('Error fetching clients:', error));
 
-        // Add change event listener to the client select element
+        // Conserver le changement d'événement existant
         document.getElementById('clientSelect').onchange = function() {
             const clientPseudo = this.value;
-            fetch(`/api/projects/${encodeURIComponent(clientPseudo)}/`) // Fetch projects for the selected client
+            fetch(`/api/projects/${encodeURIComponent(clientPseudo)}/`)
                 .then(response => response.json())
                 .then(data => {
                     const select = document.getElementById('projectSelect');
-                    select.innerHTML = '<option value="">Select a Project</option>'; // Reset project selection
+                    select.innerHTML = '<option value="">Select a Project</option>';
                     data.forEach(project => {
                         let option = new Option(project.name_project, project.name_project);
                         select.appendChild(option);
                     });
                 })
-                .catch(error => console.error('Error fetching projects:', error)); // Add basic error handling
+                .catch(error => console.error('Error fetching projects:', error));
         };
     };
 
-    function addStream() {
-        const clientName = document.getElementById('clientSelect').value;
-        if (!clientName) {
-            alert('Sélectionnez un client, s’il vous plaît !');
-            return;
-        }
+// Modifiez la fonction addStream dans votre page HTML
+function addStream() {
+    const clientName = document.getElementById('clientSelect').value;
+    if (!clientName) {
+        alert("Sélectionnez un projet, s'il vous plaît !");
+        return;
+    }
 
-        const projectName = document.getElementById('projectSelect').value;
-        if (!projectName) {
-            alert('Sélectionnez un projet, s’il vous plaît !');
-            return;
-        }
+    const projectName = document.getElementById('projectSelect').value;
+    if (!projectName) {
+        alert("Sélectionnez un projet, s'il vous plaît !");
+        return;
+    }
 
-        // Fetch cameras for the selected project
-        fetch(`/api/cameras/${encodeURIComponent(projectName)}/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.length > 0) {
-                    const container = document.getElementById('streamsContainer');
-                    const streamsSection = document.getElementById('streamsSection');
-                    const tableSection = document.getElementById('tableSection');
-                    const tableBody = tableSection.querySelector('table tbody');
+    // Récupérer les caméras pour le projet sélectionné
+    fetch(`/api/cameras/${encodeURIComponent(projectName)}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                const container = document.getElementById('streamsContainer');
+                const streamsSection = document.getElementById('streamsSection');
+                const tableSection = document.getElementById('tableSection');
+                const tableBody = tableSection.querySelector('table tbody');
 
-                    // Clear existing streams and table rows
-                    container.innerHTML = '';
-                    tableBody.innerHTML = '';
+                // Nettoyer les flux existants et les lignes du tableau
+                container.innerHTML = '';
+                tableBody.innerHTML = '';
 
-                    const primaryStreamContainer = document.createElement('div');
-                    primaryStreamContainer.id = 'primaryStream';
-                    const smallStreamsContainer = document.createElement('div');
-                    smallStreamsContainer.id = 'smallStreams';
+                const primaryStreamContainer = document.createElement('div');
+                primaryStreamContainer.id = 'primaryStream';
+                const smallStreamsContainer = document.createElement('div');
+                smallStreamsContainer.id = 'smallStreams';
 
-                    data.forEach((cam, index) => {
-                        const videoFeedUrl = `/video_feed/${encodeURIComponent(cam.name_cam)}/`;
-                        const img = document.createElement('img');
-                        img.src = videoFeedUrl;
-                        img.classList.add("img-fluid");
-                        img.style.cssText = "border: 1px solid #008000; border-radius: 10px; margin-top: 2px;"; // Consolidate styling
-
-                        // Add camera info to the table
-                        const row = tableBody.insertRow();
-                        const cell1 = row.insertCell(0);
-                        const cell2 = row.insertCell(1);
-                        cell1.textContent = cam.name_cam;
-                        cell2.textContent = cam.adresse_cam ? cam.adresse_cam : "Caméra Distant";
-
-                        img.width = 720; // Standardize sizes for simplicity, adjust as needed
+                // Pour chaque caméra trouvée
+                data.forEach((cam, index) => {
+                    // Créer l'élément image
+                    const img = document.createElement('img');
+                    img.classList.add("img-fluid");
+                    img.style.cssText = "border: 1px solid #008000; border-radius: 10px; margin-top: 2px;";
+                    img.dataset.camName = cam.name_cam;
+                    
+                    // Ajouter la caméra au tableau
+                    const row = tableBody.insertRow();
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+                    cell1.textContent = cam.name_cam;
+                    cell2.textContent = cam.adresse_cam ? cam.adresse_cam : "Caméra Distant";
+                    
+                    // Configurer la taille et la position
+                    if (index === 0) {
+                        // Stream principal
+                        img.width = 720;
                         img.height = 480;
-                        if (index === 0) {
-                            primaryStreamContainer.appendChild(img);
-                        } else {
-                            img.setAttribute('data-index', index); // Mark each small stream with an index for identification
-                            img.style.cursor = 'pointer'; // Change cursor to pointer on hover over small streams
-                            img.onclick = () => swapStreams(img); // Add click event to swap streams
-                            smallStreamsContainer.appendChild(img);
-                        }
-                    });
+                        primaryStreamContainer.appendChild(img);
+                    } else {
+                        // Streams secondaires
+                        img.width = 250;
+                        img.height = 150;
+                        img.setAttribute('data-index', index);
+                        img.style.cursor = 'pointer';
+                        img.onclick = () => swapStreams(img);
+                        smallStreamsContainer.appendChild(img);
+                    }
+                    
+                    // Mettre en place l'actualisation périodique
+                    startImageRefresh(img);
+                });
+                
+                // Ajouter les conteneurs au DOM
+                container.appendChild(primaryStreamContainer);
+                container.appendChild(smallStreamsContainer);
+                
+                // Afficher les sections
+                streamsSection.style.display = 'block';
+                tableSection.style.display = 'block';
+            } else {
+                alert('Aucune caméra trouvée pour ce projet.');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching the cameras:', error);
+            alert('Erreur lors de la récupération des caméras.');
+        });
+}
 
-                    container.appendChild(primaryStreamContainer);
-                    container.appendChild(smallStreamsContainer);
-
-                    streamsSection.style.display = 'block';
-                    tableSection.style.display = 'block';
-                } else {
-                    alert('Aucune caméra trouvée pour ce projet.');
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching the cameras:', error);
-                alert('Erreur lors de la récupération des caméras.');
-            });
+// Fonction pour rafraîchir périodiquement les images
+function startImageRefresh(imgElement) {
+    const camName = imgElement.dataset.camName;
+    
+    // Actualiser immédiatement
+    refreshImage();
+    
+    // Fonction pour actualiser l'image
+    function refreshImage() {
+        // Ajouter un timestamp pour éviter la mise en cache
+        const timestamp = new Date().getTime();
+        imgElement.src = `/api/camera/${encodeURIComponent(camName)}/latest/?t=${timestamp}`;
     }
+    
+    // Définir l'intervalle de rafraîchissement (par exemple, toutes les 2 secondes)
+    const refreshInterval = setInterval(refreshImage, 9000);
+    
+    // Stocker l'intervalle dans l'élément pour pouvoir l'arrêter si nécessaire
+    imgElement.dataset.refreshInterval = refreshInterval;
+}
 
-    function swapStreams(smallStreamImg) {
-        const primaryStreamDiv = document.getElementById('primaryStream');
-        const primaryStreamImg = primaryStreamDiv.querySelector('img');
-        const smallStreamIndex = smallStreamImg.getAttribute('data-index');
-
-        // Create a spinner and add it to the primary stream container
-        const spinnerOverlay = document.createElement('div');
-        spinnerOverlay.className = 'spinner-overlay';
-        const spinner = document.createElement('div');
-        spinner.className = 'spinner';
-        spinnerOverlay.appendChild(spinner);
-        primaryStreamDiv.appendChild(spinnerOverlay);
-
-        // Clone the small image to load the new stream in the background
-        let cloneImg = new Image();
-        cloneImg.onload = function() {
-            // Swap the sources once the new image is loaded
-            let tempSrc = primaryStreamImg.src;
-            primaryStreamImg.src = cloneImg.src;
-            smallStreamImg.src = tempSrc;
-
-            // Remove the spinner after loading
-            primaryStreamDiv.removeChild(spinnerOverlay);
-
-            // Restore the onclick handler for small streams
-            const smallStreamImgs = document.querySelectorAll('#smallStreams img');
-            smallStreamImgs.forEach(img => {
-                img.onclick = () => swapStreams(img);
-            });
-
-            // Resume the small stream
-            smallStreamImg.onload();
-        };
-        cloneImg.onerror = function() {
-            // In case of an error, remove the spinner and possibly show an error message
-            primaryStreamDiv.removeChild(spinnerOverlay);
-            console.error('Stream failed to load.');
-        };
-
-        // Append a unique query to force reload and start loading in the background
-        cloneImg.src = smallStreamImg.src.split('?')[0] + '?t=' + new Date().getTime();
+// Fonction pour échanger les flux
+function swapStreams(smallStreamImg) {
+    const primaryStreamDiv = document.getElementById('primaryStream');
+    const primaryStreamImg = primaryStreamDiv.querySelector('img');
+    
+    // Arrêter les intervalles existants
+    if (primaryStreamImg.dataset.refreshInterval) {
+        clearInterval(parseInt(primaryStreamImg.dataset.refreshInterval));
     }
+    if (smallStreamImg.dataset.refreshInterval) {
+        clearInterval(parseInt(smallStreamImg.dataset.refreshInterval));
+    }
+    
+    // Échanger les attributs
+    const tempSrc = primaryStreamImg.src;
+    const tempCamName = primaryStreamImg.dataset.camName;
+    
+    primaryStreamImg.src = smallStreamImg.src;
+    primaryStreamImg.dataset.camName = smallStreamImg.dataset.camName;
+    
+    smallStreamImg.src = tempSrc;
+    smallStreamImg.dataset.camName = tempCamName;
+    
+    // Redémarrer les intervalles
+    startImageRefresh(primaryStreamImg);
+    startImageRefresh(smallStreamImg);
+}
+
+function refreshImage() {
+    const timestamp = new Date().getTime();
+    console.log(`Rafraîchissement de l'image pour ${camName} à ${timestamp}`);
+    imgElement.src = `/api/camera/${encodeURIComponent(camName)}/latest/?t=${timestamp}`;
+}
 </script>
 
 
