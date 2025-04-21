@@ -82,7 +82,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'Site_web.wsgi.application'
 ASGI_APPLICATION = 'Site_web.asgi.application'
 
-
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # Pour la production, utilisez Redis :
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        # 'CONFIG': {
+        #     "hosts": [('127.0.0.1', 6379)],
+        # },
+    },
+}
 
 #l'internationalisation
 # Database
