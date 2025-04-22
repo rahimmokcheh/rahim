@@ -125,11 +125,11 @@
                             <i class="bi bi-camera-video fs-2"></i>
                         </a>
                     </li>
-                    <div class="dropdown  border-top ">
-                        <a href=""
+                    <div class="dropdown border-top">
+                        <a href="#"
                         class="d-flex align-items-center justify-content-center p-3 link-dark text-decoration-none dropdown-toggle"
                         id="dropdownUser3" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="" alt="mdo" width="32" height="32" class="rounded-circle">
+                        <img src="/static/img/icon/user.png" alt="user" width="32" height="32" class="rounded-circle">
                     </a>
                         <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser3" >
                           <li><a class="dropdown-item" href="choix">Nouveau Projet</a></li>
@@ -172,13 +172,14 @@
                         </div>
                     </div>
                     <!-- Separate Container for the Table -->
-                    <div class="bg-light rounded p-3 mb-3"style="display: none" id="tableSection" >
-                        <div class="table-responsive" >
-                            <table class="table table-bordered" >
+                    <div class="bg-light rounded p-3 mb-3" style="display: none" id="tableSection">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
                                 <thead>
                                     <tr>
                                         <th>Caméras</th>
                                         <th>Adresses</th>
+                                        <th>Détections</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -225,6 +226,125 @@
 <a href="#" class="btn btn-lg btn-primary btn-lg-square rounded-circle back-to-top"><i class="bi bi-arrow-up"></i></a>
 <!-------------------- Back to Top Fleshe -->
 
+<!-----style des formes de stream---->
+<style>
+/* Animation de pulsation pour les nouvelles détections */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.detection-pulse {
+    animation: pulse 0.5s ease-in-out;
+}
+
+/* Style des badges de détection */
+.badge {
+    font-size: 14px;
+    padding: 5px 8px;
+    transition: all 0.3s ease;
+}
+
+/* Style pour les streams et wrappers */
+#streamsContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 20px;
+}
+
+#primaryStream {
+    margin-right: 10px;
+}
+
+#primaryStream img {
+    width: 720px;
+    height: 480px;
+    border: 2px solid #008000;
+    border-radius: 10px;
+    object-fit: cover;
+    transition: opacity 0.3s ease-in-out;
+}
+
+#smallStreams {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    margin-top: 8px;
+}
+
+#smallStreams img {
+    width: 250px;
+    height: 150px;
+    border: 2px solid #008000;
+    border-radius: 10px;
+    margin: 5px;
+    object-fit: cover;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Styles pour les wrappers */
+.position-relative {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.position-relative:hover {
+    transform: scale(1.02);
+}
+
+/* Styles pour le tableau */
+.table {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+
+.table tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tr:hover {
+    background-color: #f0f0f0;
+}
+
+/* Style pour l'indicateur de chargement */
+.loading-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0,0,0,0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    z-index: 10;
+}
+</style>
+
+<!------------------------------------------- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="/static/lib/wow/wow.min.js"></script>
+<script src="/static/lib/easing/easing.min.js"></script>
+<script src="/static/lib/waypoints/waypoints.min.js"></script>
+<script src="/static/lib/owlcarousel/owl.carousel.min.js"></script>
+<script src="/static/lib/counterup/counterup.min.js"></script>
+<script src="/static/lib/parallax/parallax.min.js"></script>
+<script src="/static/lib/isotope/isotope.pkgd.min.js"></script>
+<script src="/static/lib/lightbox/js/lightbox.min.js"></script>
+
+<!------------------------------------------- JavaScript Libraries -->
+<!------------------------------------------ Template Javascript -->
+<script src="/static/js/main.js"></script>
+
 <!---ce script est pour les tooltips--->
 <script>
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -232,8 +352,12 @@
       return new bootstrap.Tooltip(tooltipTriggerEl)
     })
 </script>
-<!---ce script est pour la selection et affichage de streams--->
+
+<!---ce script est pour la selection et affichage de streams via WebSocket--->
 <script>
+    // Stockage des sockets WebSocket actifs
+    const activeWebSockets = {};
+
     window.onload = function() {
         // Conserver le code existant pour charger les clients
         fetch('/api/clients/')
@@ -254,7 +378,7 @@
                 .then(response => response.json())
                 .then(data => {
                     const select = document.getElementById('projectSelect');
-                    select.innerHTML = '<option value="">Select a Project</option>';
+                    select.innerHTML = '<option value="">Séléctionnez un Project</option>';
                     data.forEach(project => {
                         let option = new Option(project.name_project, project.name_project);
                         select.appendChild(option);
@@ -264,208 +388,406 @@
         };
     };
 
-// Modifiez la fonction addStream dans votre page HTML
-function addStream() {
-    const clientName = document.getElementById('clientSelect').value;
-    if (!clientName) {
-        alert("Sélectionnez un projet, s'il vous plaît !");
-        return;
-    }
+    // Fonction pour ajouter des streams
+    function addStream() {
+        const clientName = document.getElementById('clientSelect').value;
+        if (!clientName) {
+            alert("Sélectionnez un client, s'il vous plaît !");
+            return;
+        }
 
-    const projectName = document.getElementById('projectSelect').value;
-    if (!projectName) {
-        alert("Sélectionnez un projet, s'il vous plaît !");
-        return;
-    }
+        const projectName = document.getElementById('projectSelect').value;
+        if (!projectName) {
+            alert("Sélectionnez un projet, s'il vous plaît !");
+            return;
+        }
 
-    // Récupérer les caméras pour le projet sélectionné
-    fetch(`/api/cameras/${encodeURIComponent(projectName)}/`)
-        .then(response => response.json())
-        .then(data => {
-            if (data && data.length > 0) {
-                const container = document.getElementById('streamsContainer');
-                const streamsSection = document.getElementById('streamsSection');
-                const tableSection = document.getElementById('tableSection');
-                const tableBody = tableSection.querySelector('table tbody');
-
-                // Nettoyer les flux existants et les lignes du tableau
-                container.innerHTML = '';
-                tableBody.innerHTML = '';
-
-                const primaryStreamContainer = document.createElement('div');
-                primaryStreamContainer.id = 'primaryStream';
-                const smallStreamsContainer = document.createElement('div');
-                smallStreamsContainer.id = 'smallStreams';
-
-                // Pour chaque caméra trouvée
-                data.forEach((cam, index) => {
-                    // Créer l'élément image
-                    const img = document.createElement('img');
-                    img.classList.add("img-fluid");
-                    img.style.cssText = "border: 1px solid #008000; border-radius: 10px; margin-top: 2px;";
-                    img.dataset.camName = cam.name_cam;
-                    
-                    // Ajouter la caméra au tableau
-                    const row = tableBody.insertRow();
-                    const cell1 = row.insertCell(0);
-                    const cell2 = row.insertCell(1);
-                    cell1.textContent = cam.name_cam;
-                    cell2.textContent = cam.adresse_cam ? cam.adresse_cam : "Caméra Distant";
-                    
-                    // Configurer la taille et la position
-                    if (index === 0) {
-                        // Stream principal
-                        img.width = 720;
-                        img.height = 480;
-                        primaryStreamContainer.appendChild(img);
-                    } else {
-                        // Streams secondaires
-                        img.width = 250;
-                        img.height = 150;
-                        img.setAttribute('data-index', index);
-                        img.style.cursor = 'pointer';
-                        img.onclick = () => swapStreams(img);
-                        smallStreamsContainer.appendChild(img);
-                    }
-                    
-                    // Mettre en place l'actualisation périodique
-                    startImageRefresh(img);
-                });
-                
-                // Ajouter les conteneurs au DOM
-                container.appendChild(primaryStreamContainer);
-                container.appendChild(smallStreamsContainer);
-                
-                // Afficher les sections
-                streamsSection.style.display = 'block';
-                tableSection.style.display = 'block';
-            } else {
-                alert('Aucune caméra trouvée pour ce projet.');
+        // Fermer les WebSockets existants
+        Object.values(activeWebSockets).forEach(socket => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close();
             }
-        })
-        .catch(error => {
-            console.error('Error fetching the cameras:', error);
-            alert('Erreur lors de la récupération des caméras.');
         });
-}
+        
+        // Vider les WebSockets actifs
+        Object.keys(activeWebSockets).forEach(key => delete activeWebSockets[key]);
 
-// Fonction pour rafraîchir périodiquement les images
-function startImageRefresh(imgElement) {
-    const camName = imgElement.dataset.camName;
+        // Récupérer les caméras pour le projet sélectionné
+        fetch(`/api/cameras/${encodeURIComponent(projectName)}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const container = document.getElementById('streamsContainer');
+                    const streamsSection = document.getElementById('streamsSection');
+                    const tableSection = document.getElementById('tableSection');
+                    const tableBody = tableSection.querySelector('table tbody');
+
+                    // Nettoyer les flux existants et les lignes du tableau
+                    container.innerHTML = '';
+                    tableBody.innerHTML = '';
+
+                    const primaryStreamContainer = document.createElement('div');
+                    primaryStreamContainer.id = 'primaryStream';
+                    const smallStreamsContainer = document.createElement('div');
+                    smallStreamsContainer.id = 'smallStreams';
+
+                    // Pour chaque caméra trouvée
+                    data.forEach((cam, index) => {
+                        // Créer le container pour chaque image
+                        const streamWrapper = document.createElement('div');
+                        streamWrapper.classList.add('position-relative');
+                        
+                        // Créer l'élément image
+                        const img = document.createElement('img');
+                        img.classList.add("img-fluid");
+                        img.dataset.camName = cam.name_cam;
+                        
+                        // Créer l'indicateur de chargement
+                        const loadingIndicator = document.createElement('div');
+                        loadingIndicator.classList.add('loading-indicator');
+                        loadingIndicator.textContent = 'Connexion...';
+                        streamWrapper.appendChild(loadingIndicator);
+                        
+                        // Créer le badge de détection
+                        const detectionBadge = document.createElement('div');
+                        detectionBadge.classList.add('position-absolute', 'top-0', 'end-0', 'm-2');
+                        const detectionCountSpan = document.createElement('span');
+                        detectionCountSpan.id = `detection-count-${cam.name_cam}`;
+                        detectionCountSpan.classList.add('badge', 'bg-warning', 'text-dark');
+                        detectionCountSpan.textContent = '0';
+                        detectionBadge.appendChild(detectionCountSpan);
+                        
+                        // Assembler le wrapper
+                        streamWrapper.appendChild(img);
+                        streamWrapper.appendChild(detectionBadge);
+                        
+                        // Ajouter la caméra au tableau
+                        const row = tableBody.insertRow();
+                        const cell1 = row.insertCell(0);
+                        const cell2 = row.insertCell(1);
+                        const cell3 = row.insertCell(2);
+                        cell1.textContent = cam.name_cam;
+                        cell2.textContent = cam.adresse_cam ? cam.adresse_cam : "Caméra Distant";
+                        
+                        // Ajouter un badge de détection dans le tableau
+                        const tableBadge = document.createElement('span');
+                        tableBadge.id = `table-detection-count-${cam.name_cam}`;
+                        tableBadge.classList.add('badge', 'bg-warning', 'text-dark');
+                        tableBadge.textContent = '0';
+                        cell3.appendChild(tableBadge);
+                        
+                        // Configurer la taille et la position
+                        if (index === 0) {
+                            // Stream principal
+                            img.width = 720;
+                            img.height = 480;
+                            primaryStreamContainer.appendChild(streamWrapper);
+                        } else {
+                            // Streams secondaires
+                            img.width = 250;
+                            img.height = 150;
+                            img.setAttribute('data-index', index);
+                            streamWrapper.style.cursor = 'pointer';
+                            streamWrapper.onclick = () => swapStreams(streamWrapper);
+                            smallStreamsContainer.appendChild(streamWrapper);
+                        }
+                        
+                        // Démarrer la connexion WebSocket pour cette caméra
+                        connectWebSocket(img, streamWrapper, cam.name_cam);
+                    });
+                    
+                    // Ajouter les conteneurs au DOM
+                    container.appendChild(primaryStreamContainer);
+                    container.appendChild(smallStreamsContainer);
+                    
+                    // Afficher les sections
+                    streamsSection.style.display = 'block';
+                    tableSection.style.display = 'block';
+                } else {
+                    alert('Aucune caméra trouvée pour ce projet.');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching the cameras:', error);
+                alert('Erreur lors de la récupération des caméras.');
+            });
+    }
+
+    // Fonction pour établir une connexion WebSocket pour une caméra
+    // Fonction pour établir une connexion WebSocket pour une caméra
+function connectWebSocket(imgElement, wrapperElement, camName) {
+    // Vérifier si le protocole est sécurisé (https) ou non (http)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     
-    // Actualiser immédiatement
-    refreshImage();
+    // Encodage pour s'assurer que les espaces sont correctement transmis
+    const encodedCamName = encodeURIComponent(camName);
+    const wsUrl = `${protocol}//${window.location.host}/ws/camera/${encodedCamName}/`;
     
-    // Fonction pour actualiser l'image
-    function refreshImage() {
-        // Ajouter un timestamp pour éviter la mise en cache
-        const timestamp = new Date().getTime();
-        imgElement.src = `/api/camera/${encodeURIComponent(camName)}/latest/?t=${timestamp}`;
+    console.log(`Tentative de connexion à: ${wsUrl}`);
+    
+    // Obtenir l'indicateur de chargement
+    const loadingIndicator = wrapperElement.querySelector('.loading-indicator');
+    
+    // Créer une nouvelle instance WebSocket
+    const socket = new WebSocket(wsUrl);
+    
+    // Stocker la référence du socket
+    activeWebSockets[camName] = socket;
+    
+    // Définir un compteur de reconnexions et un délai croissant
+    let reconnectAttempts = 0;
+    const maxReconnectDelay = 30000; // 30 secondes maximum
+    
+    // Quand la connexion est établie
+    socket.onopen = function(e) {
+        console.log(`Connexion WebSocket établie pour la caméra ${camName}`);
+        // Réinitialiser le compteur de reconnexions
+        reconnectAttempts = 0;
+        
+        if (loadingIndicator) {
+            loadingIndicator.textContent = 'Récupération des images...';
+        }
+        
+        // Demander explicitement le démarrage du streaming
+        socket.send(JSON.stringify({
+            'message': 'start_streaming'
+        }));
+        
+        // Configurer un ping périodique pour maintenir la connexion active
+        const pingInterval = setInterval(function() {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ 'message': 'ping' }));
+            } else {
+                clearInterval(pingInterval);
+            }
+        }, 25000); // Envoyer un ping toutes les 25 secondes
+    };
+    
+    // Quand on reçoit un message du serveur
+    socket.onmessage = function(e) {
+        // Supprimer l'indicateur de chargement s'il existe
+        if (loadingIndicator && loadingIndicator.parentNode) {
+            loadingIndicator.remove();
+        }
+        
+        // Traiter différemment les données binaires (images) et texte (JSON)
+        if (e.data instanceof Blob) {
+            // Données binaires = image
+            handleImageData(e.data, imgElement);
+        } else {
+            // Données texte = JSON avec informations ou erreurs
+            handleJsonData(e.data, camName);
+        }
+    };
+    
+    // Fonction pour traiter les images reçues
+    function handleImageData(data, imgElement) {
+        data.arrayBuffer().then(buffer => {
+            // Vérifier si c'est une image valide (les premiers octets d'un JPEG)
+            const header = new Uint8Array(buffer.slice(0, 2));
+            const isValidImage = (header[0] === 0xFF && header[1] === 0xD8);
+            
+            if (isValidImage) {
+                const blob = new Blob([buffer], { type: 'image/jpeg' });
+                const imageUrl = URL.createObjectURL(blob);
+                
+                // Libérer l'URL précédente pour éviter les fuites de mémoire
+                if (imgElement.dataset.imageUrl) {
+                    URL.revokeObjectURL(imgElement.dataset.imageUrl);
+                }
+                
+                // Mettre à jour l'image avec transition douce
+                imgElement.src = imageUrl;
+                imgElement.dataset.imageUrl = imageUrl;
+                imgElement.style.opacity = '0';
+                setTimeout(() => {
+                    imgElement.style.opacity = '1';
+                }, 50);
+                
+                // Indiquer que l'image a été mise à jour avec succès
+                imgElement.dataset.lastUpdate = Date.now();
+            } else {
+                console.error(`Données binaires reçues pour ${camName} ne sont pas une image valide`);
+                imgElement.src = '/static/img/error.png'; // Image d'erreur
+            }
+        }).catch(err => {
+            console.error(`Erreur lors du traitement de l'image pour ${camName}:`, err);
+        });
     }
     
-    // Définir l'intervalle de rafraîchissement (par exemple, toutes les 2 secondes)
-    const refreshInterval = setInterval(refreshImage, 9000);
-    
-    // Stocker l'intervalle dans l'élément pour pouvoir l'arrêter si nécessaire
-    imgElement.dataset.refreshInterval = refreshInterval;
-}
-
-// Fonction pour échanger les flux
-function swapStreams(smallStreamImg) {
-    const primaryStreamDiv = document.getElementById('primaryStream');
-    const primaryStreamImg = primaryStreamDiv.querySelector('img');
-    
-    // Arrêter les intervalles existants
-    if (primaryStreamImg.dataset.refreshInterval) {
-        clearInterval(parseInt(primaryStreamImg.dataset.refreshInterval));
+    // Fonction pour traiter les données JSON
+    function handleJsonData(data, camName) {
+        try {
+            const jsonData = JSON.parse(data);
+            
+            if (jsonData.error) {
+                console.error(`Erreur pour ${camName}:`, jsonData.error);
+                // Afficher visuellement l'erreur si besoin
+            } else if (jsonData.detections_count !== undefined) {
+                // Mettre à jour le compteur de détections
+                updateDetectionCounters(camName, jsonData.detections_count);
+            } else if (jsonData.message === 'pong') {
+                console.log(`Pong reçu de ${camName}`);
+            }
+        } catch (error) {
+            console.error(`Erreur lors du parsing JSON pour ${camName}:`, error);
+        }
     }
-    if (smallStreamImg.dataset.refreshInterval) {
-        clearInterval(parseInt(smallStreamImg.dataset.refreshInterval));
+    
+    // En cas d'erreur
+    socket.onerror = function(error) {
+        console.error(`Erreur WebSocket pour ${camName}:`, error);
+        if (loadingIndicator) {
+            loadingIndicator.textContent = 'Erreur de connexion';
+            loadingIndicator.style.backgroundColor = 'rgba(255,0,0,0.7)';
+        }
+        
+        // Afficher une image d'erreur
+        imgElement.src = '/static/img/error.png';
+    };
+    
+    // Quand la connexion est fermée
+    socket.onclose = function(e) {
+        console.log(`Connexion WebSocket fermée pour ${camName}. Code: ${e.code}, Raison: ${e.reason}`);
+        
+        // Afficher un message de reconnexion
+        if (loadingIndicator && loadingIndicator.parentNode) {
+            loadingIndicator.textContent = 'Reconnexion...';
+            loadingIndicator.style.backgroundColor = 'rgba(255,165,0,0.7)';
+        } else {
+            const reconnectIndicator = document.createElement('div');
+            reconnectIndicator.classList.add('loading-indicator');
+            reconnectIndicator.textContent = 'Reconnexion...';
+            reconnectIndicator.style.backgroundColor = 'rgba(255,165,0,0.7)';
+            wrapperElement.appendChild(reconnectIndicator);
+        }
+        
+        // Tenter de se reconnecter après un délai, sauf si la fermeture est intentionnelle
+        if (!imgElement.dataset.intentionalClose) {
+            // Augmenter le délai exponentiellement avec chaque tentative (backoff exponentiel)
+            reconnectAttempts++;
+            const delay = Math.min(5000 * Math.pow(1.5, reconnectAttempts - 1), maxReconnectDelay);
+            
+            console.log(`Tentative de reconnexion #${reconnectAttempts} pour ${camName} dans ${delay/1000} secondes...`);
+            
+            setTimeout(() => {
+                if (activeWebSockets[camName]?.readyState !== WebSocket.OPEN) {
+                    console.log(`Reconnexion pour ${camName}...`);
+                    connectWebSocket(imgElement, wrapperElement, camName);
+                }
+            }, delay);
+        }
+    };
+    
+    // Associer le socket à l'élément image pour référence
+    imgElement.dataset.socket = camName;
+    
+    // Définir un watchdog pour surveiller l'absence de mise à jour d'image
+    const watchdogInterval = setInterval(() => {
+        if (socket.readyState !== WebSocket.OPEN) {
+            clearInterval(watchdogInterval);
+            return;
+        }
+        
+        const lastUpdate = parseInt(imgElement.dataset.lastUpdate || '0');
+        const now = Date.now();
+        
+        // Si pas de mise à jour depuis plus de 10 secondes, demander une nouvelle image
+        if (now - lastUpdate > 10000) {
+            console.log(`Watchdog: Pas de mise à jour depuis ${(now - lastUpdate)/1000}s pour ${camName}, demande d'une nouvelle image`);
+            socket.send(JSON.stringify({ 'message': 'get_latest_image' }));
+        }
+    }, 10000); // Vérifier toutes les 10 secondes
+    
+    // Nettoyer l'intervalle quand la socket est fermée
+    socket.addEventListener('close', () => clearInterval(watchdogInterval));
+}
+    // Fonction pour mettre à jour tous les compteurs de détection pour une caméra
+    function updateDetectionCounters(camName, detectionCount) {
+        // Mettre à jour le badge sur l'image
+        const detectionCountElements = document.querySelectorAll(`#detection-count-${camName}`);
+        const tableDetectionElement = document.querySelector(`#table-detection-count-${camName}`);
+        
+        // Convertir détections en nombre
+        const count = parseInt(detectionCount) || 0;
+        
+        // Mettre à jour tous les badges
+        const elements = Array.from(detectionCountElements);
+        if (tableDetectionElement) elements.push(tableDetectionElement);
+        
+        elements.forEach(element => {
+            if (!element) return;
+            
+            // Sauvegarder l'ancienne valeur pour l'animation
+            const oldValue = parseInt(element.textContent || '0');
+            element.textContent = count;
+            
+            // Modifier la couleur en fonction du nombre de détections
+            if (count > 0) {
+                element.classList.remove('bg-warning', 'text-dark');
+                element.classList.add('bg-danger', 'text-white');
+               // Ajouter une animation de pulsation si la valeur a changé
+               if (oldValue !== count) {
+                    element.classList.remove('detection-pulse');
+                    void element.offsetWidth; // Force reflow pour réinitialiser l'animation
+                    element.classList.add('detection-pulse');
+                }
+            } else {
+                element.classList.remove('bg-danger', 'text-white', 'detection-pulse');
+                element.classList.add('bg-warning', 'text-dark');
+            }
+        });
     }
-    
-    // Échanger les attributs
-    const tempSrc = primaryStreamImg.src;
-    const tempCamName = primaryStreamImg.dataset.camName;
-    
-    primaryStreamImg.src = smallStreamImg.src;
-    primaryStreamImg.dataset.camName = smallStreamImg.dataset.camName;
-    
-    smallStreamImg.src = tempSrc;
-    smallStreamImg.dataset.camName = tempCamName;
-    
-    // Redémarrer les intervalles
-    startImageRefresh(primaryStreamImg);
-    startImageRefresh(smallStreamImg);
-}
 
-function refreshImage() {
-    const timestamp = new Date().getTime();
-    console.log(`Rafraîchissement de l'image pour ${camName} à ${timestamp}`);
-    imgElement.src = `/api/camera/${encodeURIComponent(camName)}/latest/?t=${timestamp}`;
-}
+    // Fonction pour échanger les flux
+    function swapStreams(smallStreamWrapper) {
+        const primaryStreamDiv = document.getElementById('primaryStream');
+        const primaryStreamWrapper = primaryStreamDiv.querySelector('.position-relative');
+        const primaryStreamImg = primaryStreamWrapper.querySelector('img');
+        const smallStreamImg = smallStreamWrapper.querySelector('img');
+        
+        // Récupérer les noms des caméras
+        const primaryCamName = primaryStreamImg.dataset.camName;
+        const smallCamName = smallStreamImg.dataset.camName;
+        
+        console.log(`Échange des flux entre ${primaryCamName} et ${smallCamName}`);
+        
+        // Échanger les contenus HTML complets des wrappers
+        const tempHTML = primaryStreamWrapper.innerHTML;
+        primaryStreamWrapper.innerHTML = smallStreamWrapper.innerHTML;
+        smallStreamWrapper.innerHTML = tempHTML;
+        
+        // Récupérer les nouvelles références d'images
+        const newPrimaryImg = primaryStreamWrapper.querySelector('img');
+        const newSmallImg = smallStreamWrapper.querySelector('img');
+        
+        // Ajuster les tailles
+        if (newPrimaryImg) {
+            newPrimaryImg.width = 720;
+            newPrimaryImg.height = 480;
+            newPrimaryImg.dataset.camName = smallCamName;
+        }
+        
+        if (newSmallImg) {
+            newSmallImg.width = 250;
+            newSmallImg.height = 150;
+            newSmallImg.dataset.camName = primaryCamName;
+        }
+        
+        // Réinitialiser le gestionnaire d'événements pour le petit stream
+        smallStreamWrapper.onclick = () => swapStreams(smallStreamWrapper);
+    }
+
+    // Nettoyer les sockets avant de quitter la page
+    window.addEventListener('beforeunload', function() {
+        Object.values(activeWebSockets).forEach(socket => {
+            if (socket) {
+                // Marquer la fermeture comme intentionnelle pour éviter les tentatives de reconnexion
+                socket.intentionalClose = true;
+                socket.close();
+            }
+        });
+    });
 </script>
-
-
-
-<!-----style des formes de stream---->
-<style>
-
-#streamsContainer {
-    display: flex;
-    flex-direction: row; /* Change direction to row */
-    align-items: center;
-    justify-content: center;
-}
-
-#primaryStream {
-    margin-right: 10px; /* Add some margin between primary stream and small streams */
-}
-
-#primaryStream img {
-    width: 640;
-    height: 480px;
-    border: 1px solid black;
-}
-
-#smallStreams {
-    display: flex;
-    flex-direction: column; /* Change direction to column */
-    justify-content: flex-start; /* Start from the top */
-    margin-top: 8px;
-}
-
-#smallStreams img {
-    width: 250px;
-    height: 150px;
-    border: 1px solid black;
-    margin: 5px;
-}
-
-
-</style>
-<!------------------------------------------- JavaScript Libraries -->
-<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-<script src="/static/lib/wow/wow.min.js"></script>
-<script src="/static/lib/easing/easing.min.js"></script>
-<script src="/static/lib/waypoints/waypoints.min.js"></script>
-<script src="/static/lib/owlcarousel/owl.carousel.min.js"></script>
-<script src="/static/lib/counterup/counterup.min.js"></script>
-<script src="/static/lib/parallax/parallax.min.js"></script>
-<script src="/static/lib/isotope/isotope.pkgd.min.js"></script>
-<script src="/static/lib/lightbox/js/lightbox.min.js"></script>
-
-<!------------------------------------------- JavaScript Libraries -->
-<!------------------------------------------ Template Javascript -->
-<script src="/static/js/main.js"></script>
-<!------------------------------------------ Template Javascript -->
-
-<!---ce script est pour les tooltips--->
-<script>
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl)
-    })
-    </script>
 </body>
 </html>
