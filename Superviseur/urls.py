@@ -27,8 +27,8 @@ urlpatterns = [
         path('api/cameras/<str:project_name>/', views.camera_list, name='camera_list'),
 
     # Nouvelles URLs pour la gestion des images
-    path('api/camera/<str:cam_name>/upload/', views.receive_image, name='receive_image'),
-    path('api/camera/<str:cam_name>/latest/', views.get_latest_image, name='get_latest_image'),
+   # path('api/camera/<str:cam_name>/upload/', views.receive_image, name='receive_image'),
+   # path('api/camera/<str:cam_name>/latest/', views.get_latest_image, name='get_latest_image'),
 
  
     ]
